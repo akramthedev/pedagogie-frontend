@@ -1,0 +1,120 @@
+{
+    menutitle: "Pédagogique",
+    menucontent: "Enseignant, Administration, Parent",
+    Items: [
+      // Section Enseignant
+      {
+        title: "Enseignant",
+        icon: "chalkboard-teacher",
+        type: "group",
+        active: true,
+        children: [
+          {
+            title: "Gestion des Présences",
+            icon: "check-circle",
+            type: "sub",
+            active: false,
+            children: [
+              { path: `${process.env.PUBLIC_URL}/enseignant/presences/suivi`, title: "Suivi des Présences", type: "link" },
+              { path: `${process.env.PUBLIC_URL}/enseignant/presences/rapport`, title: "Rapport de Présences", type: "link" }
+            ],
+          },
+          {
+            title: "Gestion des Notes",
+            icon: "pen",
+            type: "sub",
+            active: false,
+            children: [
+              { path: `${process.env.PUBLIC_URL}/enseignant/notes/saisie`, title: "Saisie des Notes", type: "link" },
+              { path: `${process.env.PUBLIC_URL}/enseignant/notes/consultation`, title: "Consultation des Notes", type: "link" }
+            ],
+          },
+          {
+            title: "Génération des Bulletins",
+            icon: "file-alt",
+            type: "link",
+            path: `${process.env.PUBLIC_URL}/enseignant/bulletins`
+          },
+          {
+            title: "Statistiques",
+            icon: "chart-line",
+            type: "link",
+            path: `${process.env.PUBLIC_URL}/enseignant/statistiques`
+          }
+        ]
+      },
+      
+      // Section Administration
+      {
+        title: "Administration",
+        icon: "cogs",
+        type: "group",
+        active: false,
+        children: [
+          {
+            title: "Gestion des Utilisateurs",
+            icon: "users",
+            type: "sub",
+            active: false,
+            children: [
+              { path: `${process.env.PUBLIC_URL}/administration/utilisateurs/enseignants`, title: "Enseignants", type: "link" },
+              { path: `${process.env.PUBLIC_URL}/administration/utilisateurs/parents`, title: "Parents", type: "link" },
+              { path: `${process.env.PUBLIC_URL}/administration/utilisateurs/élèves`, title: "Élèves", type: "link" }
+            ],
+          },
+          {
+            title: "Paramètres Scolaires",
+            icon: "school",
+            type: "sub",
+            active: false,
+            children: [
+              { path: `${process.env.PUBLIC_URL}/administration/parametres/classes`, title: "Gestion des Classes", type: "link" },
+              { path: `${process.env.PUBLIC_URL}/administration/parametres/matieres`, title: "Gestion des Matières", type: "link" }
+            ],
+          },
+          {
+            title: "Statistiques",
+            icon: "chart-bar",
+            type: "link",
+            path: `${process.env.PUBLIC_URL}/administration/statistiques`
+          }
+        ]
+      },
+      
+      // Section Parent
+      {
+        title: "Parent",
+        icon: "user",
+        type: "group",
+        active: false,
+        children: [
+          {
+            title: "Suivi des Présences",
+            icon: "eye",
+            type: "link",
+            path: `${process.env.PUBLIC_URL}/parent/presences`
+          },
+          {
+            title: "Notes et Bulletins",
+            icon: "book",
+            type: "sub",
+            active: false,
+            children: [
+              { path: `${process.env.PUBLIC_URL}/parent/notes`, title: "Consulter les Notes", type: "link" },
+              { path: `${process.env.PUBLIC_URL}/parent/bulletins`, title: "Consulter les Bulletins", type: "link" }
+            ],
+          },
+          {
+            title: "Communication",
+            icon: "comments",
+            type: "sub",
+            active: false,
+            children: [
+              { path: `${process.env.PUBLIC_URL}/parent/messages`, title: "Messages", type: "link" },
+              { path: `${process.env.PUBLIC_URL}/parent/notifications`, title: "Notifications", type: "link" }
+            ],
+          }
+        ]
+      }
+    ]
+  }

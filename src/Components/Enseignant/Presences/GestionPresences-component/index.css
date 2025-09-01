@@ -1,0 +1,702 @@
+.containerOfPresences{
+    
+    display: flex;
+    flex-direction: column;
+    padding: 0 1rem !important;
+    padding-bottom: 2rem !important;
+}
+
+
+
+
+
+/* ----- CSS esthétique (pas de font-size ni font-family) ----- */
+
+.controls-row {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+/* chaque "carte" contenant label + select */
+.field {
+  background: white !important;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 12px;
+  border-radius: 14px;
+  min-width: 220px;
+  box-shadow: 0 8px 22px rgba(9, 30, 66, 0.045);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+/* légère élévation au survol (pour le field qui contient un select actif) */
+.field:hover {
+  box-shadow: 0 14px 40px rgba(9, 30, 66, 0.08);
+}
+
+/* label au-dessus */
+.field-label {
+  display: block;
+  color: rgba(10, 10, 10, 0.85);
+  margin-bottom: 8px;
+  letter-spacing: 0.2px;
+  opacity: 0.95;
+}
+
+/* wrapper pour l'icône flèche et positionnement */
+.select-wrap {
+  position: relative;
+}
+
+/* style commun des selects */
+.select {
+  width: 100%;
+  padding: 10px 40px 10px 12px; /* laisse de l'espace à droite pour la flèche */
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  box-shadow: inset 0 -1px 0 rgba(10, 10, 10, 0.02);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+/* focus visible (ne change pas la typo globale) */
+.select:focus {
+  outline: none;
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+}
+
+/* faux style pour selects désactivés (fake) */
+.select-fake {
+  cursor: default;
+  opacity: 0.86;
+  pointer-events: none; /* totalement non cliquable */
+  background: linear-gradient(180deg,#fbfbfd,#f4f6fb);
+  border-style: dashed;
+  color: rgba(20, 20, 20, 0.6);
+}
+
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(12, 12, 12, 0.55);
+  border-bottom: 2px solid rgba(12, 12, 12, 0.55);
+  pointer-events: none;
+}
+.field .select-fake + .select-wrap::after,
+.select-fake + .select-wrap::after {
+  opacity: 0.6;
+}
+
+@media (max-width: 720px) {
+  .controls-row { gap: 10px; }
+  .field { min-width: 100%; }
+}
+
+
+
+
+
+
+.primaireView{
+  width: 100%;
+  margin: 0 auto;
+  background: white !important;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 1.5rem 1.5rem !important;
+  border-radius: 14px;
+  min-width: 220px;
+  box-shadow: 0 8px 22px rgba(9, 30, 66, 0.045);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+
+.containerOfNoData{
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height:333px !important;
+}
+
+.containerOfNoData span{
+  color: rgb(158, 158, 158) !important;
+}
+
+
+ 
+
+.buttonprevNext{
+  background-color: #f0f0f0;
+  width: auto;
+  padding: .5rem 1rem !important;
+  border: 1px solid #dedede;
+  color: #3c3c3c;
+  font-weight: 400;
+  outline: none;
+  border-radius: 0.35rem ;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s all ease-in-out;
+}
+
+.buttonprevNext:hover{
+    background-color: #e9e9e9;
+}
+
+
+
+.goToCurrentDay2{
+  background-color: #f0efff;
+  width: auto;
+  padding: .5rem 1rem !important;
+  border: 1px solid #d5d1ff;
+  color: #7f71fc;
+  font-weight: 500;
+  outline: none;
+  border-radius: 0.35rem ;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 0px;
+  transition: 0.15s all ease-in-out;
+}
+
+
+.goToCurrentDay2:hover{
+    background-color: #e0ddff;
+}
+
+.goToCurrentDay{
+  background-color: #f0efff;
+  width: auto;
+  padding: .5rem 1rem !important;
+  border: 1px solid #d5d1ff;
+  color: #7f71fc;
+  font-weight: 500;
+  outline: none;
+  border-radius: 0.35rem ;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: 0px;
+  transition: 0.15s all ease-in-out;
+}
+
+
+.goToCurrentDay:hover{
+    background-color: #e0ddff;
+}
+
+
+.goToCurrentDayDisabled{
+  background-color: #f0efff;
+  width: auto;
+  padding: .5rem 1rem !important;
+  border: 1px solid #d5d1ff;
+  color: #c2bbff;
+  font-weight: 500;
+  outline: none;
+  border-radius: 0.35rem ;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 0px;
+  cursor: not-allowed !important;
+  transition: 0.15s all ease-in-out;
+}
+
+.goToCurrentDay:hover{
+    background-color: #e0ddff;
+}
+
+.savePresences{
+  background-color: #f0efff;
+  width: auto;
+  padding: .7rem 1rem !important;
+  border: 1px solid #d5d1ff;
+  color: #7f71fc;
+  font-weight: 500;
+  outline: none;
+  border-radius: 0.4rem ;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s all ease-in-out;
+}
+
+
+.savePresences:hover{
+    background-color: #e0ddff;
+}
+
+
+.containerOfButton{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 50px;
+}
+ 
+
+
+
+
+
+/* Card shown when no students */
+.no-data-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: linear-gradient(180deg, rgba(250,250,252,0.8), rgba(244,247,250,0.6));
+  box-shadow: 0 10px 30px rgba(9, 30, 66, 0.04);
+  color: rgba(15, 23, 42, 0.9);
+}
+
+/* Texts dans la carte "aucun élève" */
+.no-data-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.no-data-sub {
+  color: rgba(15, 23, 42, 0.55);
+  opacity: 0.95;
+}
+
+/* Liste d'élèves */
+.students-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Ligne élève */
+.student-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ebebeb;
+  margin-bottom: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+/* Hover léger */
+.student-row:hover {
+}
+
+/* Info élève (gauche) */
+.student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.student-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.student-meta {
+  color: rgba(15, 23, 42, 0.5);
+  opacity: 0.95;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Container action (droite) */
+.student-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+
+
+
+
+
+
+/* Toggle accessible custom */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Visually hide the native checkbox but keep it accessible */
+.toggle input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The switch background */
+.switch {
+  width: 60px;
+  height: 33px;
+  border-radius: 999px;
+  display: inline-block;
+  position: relative;
+background: linear-gradient(90deg, #ffffff 0%, #e6e6e6 50%, #cdcdcd 100%);
+  box-shadow: inset 0 -1px 0 rgba(10,10,10,0.02);
+  transition: background 160ms ease, border-color 160ms ease;
+  flex-shrink: 0;
+}
+
+/* The knob */
+.switch::after {
+  content: "";
+  position: absolute;
+  width: 25px !important;
+  height: 25px !important;
+  border-radius: 50%;
+  top: 3px;
+  left: 5px ;
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  box-shadow: 0 6px 18px rgba(9, 30, 66, 0.07);
+  transition: left 160ms ease, box-shadow 160ms ease;
+}
+
+/* When checked (target native input via sibling selector) */
+.toggle input[type="checkbox"]:checked + .switch {
+  border: 1px solid #7f71fc;
+  background: linear-gradient(90deg, #bcb5ff 0%, #7f71fc 50%, #5846ff 100%);
+}
+
+ 
+
+
+
+.toggle input[type="checkbox"]:checked + .switch::after {
+  left: 28px ;
+
+}
+
+/* Focus ring for keyboard users */
+.toggle input[type="checkbox"]:focus + .switch {
+}
+
+/* Label next to switch */
+.toggle-label {
+}
+
+/* Small screens responsiveness */
+@media (max-width: 720px) {
+  .student-row {
+    padding: 10px;
+    gap: 10px;
+  }
+  .student-meta {
+    max-width: 100px;
+  }
+  .switch {
+    width: 40px;
+    height: 20px;
+  }
+  .switch::after {
+    width: 16px;
+    height: 16px;
+    top: 2px;
+    left: 2px;
+  }
+  .toggle input[type="checkbox"]:checked + .switch::after {
+    left: 22px;
+  }
+
+  
+ 
+
+}
+
+
+
+
+
+ 
+
+/* Container général */
+.students-block {
+  width: 100%;
+  padding-top: 1rem !important;
+  display: block;
+  box-sizing: border-box;
+}
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+.containerOfPresences {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px) !important; /* toute la hauteur de l'écran */
+}
+
+ 
+ 
+
+
+.containerOfPresences {
+  scrollbar-width: thin !important;              
+  scrollbar-color: #c9c9c9 #f7f7f7 !important;   
+}
+
+/* Chrome, Edge, Safari */
+.containerOfPresences::-webkit-scrollbar {
+  width: 6px !important;   /* largeur verticale */
+  height: 6px !important;  /* hauteur horizontale */
+}
+
+.containerOfPresences::-webkit-scrollbar-track {
+  background: #f7f7f7 !important;    /* fond clair */
+  border-radius: 10px !important;
+}
+
+.containerOfPresences::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d6d6d6, #bfbfbf) !important;
+  border-radius: 10px !important;
+}
+
+.containerOfPresences::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #bfbfbf, #a6a6a6) !important;
+}
+ 
+
+
+.retardBtn{
+  background-color: #fff9e7;
+  border: 1px solid #fff1c6;
+  color: #ecb40c;
+  padding: 0.5rem;
+  font-weight: 500;
+  outline: none;
+  border-radius: 50rem ;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s all ease-in-out;
+  margin-bottom: 0.5rem !important;
+}
+
+
+.retardBtn:hover{
+    background-color: #fff8e2;
+}
+
+
+
+
+
+.commentBtn{
+  background-color: #e9ffed;
+  border: 1px solid #d1ffd8;
+  color: #22c55e;
+  padding: 0.5rem;
+  font-weight: 500;
+  outline: none;
+  border-radius: 50rem ;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s all ease-in-out;
+  margin-bottom: 0.5rem !important;
+}
+
+
+.commentBtn:hover{
+  background-color: #daffe1;
+}
+ 
+
+
+.moreBtn{
+  background-color: #f0f0f0;
+  border: 1px solid #ebebeb;
+  color: #5e5e5e;
+  padding: 0.5rem;
+  font-weight: 500;
+  outline: none;
+  border-radius: 50rem ;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s all ease-in-out;
+  margin-bottom: 0.5rem !important;
+}
+
+
+.moreBtn:hover{
+  background-color: #e1e1e1;
+}
+
+
+
+
+.toggle-label{
+  width: 60px !important;
+}
+
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+
+
+
+
+
+
+
+
+.rbc-calendar {
+  flex: 1 !important;
+  display: flex;
+  flex-direction: column;
+  height: 100% !important;
+}
+
+ 
+
+.rbc-calendar .rbc-btn {
+  background-color: #7f71fc !important; /* violet-bleu */
+  color: #fff !important;
+  border: 1px solid #ebebeb !important;
+  padding: 6px 12px !important;
+  margin: 2px!important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: background 0.1s !important;
+}
+
+.rbc-btn:hover {
+  background-color: #685ae9 !important; /* un peu plus foncé au hover */
+}
+
+/* Boutons sélectionnés (active) */
+.rbc-active {
+  background-color: #7f71fc !important;
+  color: white !important;
+  box-shadow: none !important;
+}
+
+/* Toolbar sections */
+.rbc-toolbar .rbc-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+
+
+
+.student-actions{
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.student-info2{
+    margin-right: 11rem !important;
+}
+
+.popup-title{
+  text-transform: capitalize;
+}
+
+.popup-buttons{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+}
+
+
+
+
+.btnSauvegardeSecondaire{
+  background-color: #f0efff;
+  width: auto;
+  padding: .5rem 1rem !important;
+  border: 1px solid #d5d1ff;
+  color: #7f71fc;
+  font-weight: 400;
+  outline: none;
+  border-radius: 0.35rem ;
+  display: flex;
+  margin-left: -0.5rem;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s all ease-in-out;
+}
+
+.btnSauvegardeSecondaire:hover{
+    background-color: #d5d2ff;
+}
+
+
+
+.fermer{
+  background-color: #f0f0f0;
+  border: 1px solid #ebebeb;
+  color: #3a3a3a;
+  width: auto;
+  padding: .5rem 1rem !important;
+  font-weight: 400;
+  outline: none;
+  border-radius: 0.35rem ;
+  display: flex;
+  margin-right: -0.5rem !important;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s all ease-in-out;
+}
+
+.fermer:hover{
+    background-color: #dcdcdc;
+}
+

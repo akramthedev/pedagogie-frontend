@@ -1,0 +1,14 @@
+1. Qu'est-ce que Webpack ?
+Webpack est un outil de module bundler pour les applications JavaScript modernes. 
+Il prend vos fichiers source (HTML, CSS, JavaScript, images, etc.) et les 
+compile en un ou plusieurs fichiers optimisés pour le déploiement dans un navigateur.
+
+Fonction principale : Webpack regroupe tous vos fichiers 
+(modules) en un seul fichier ou en plusieurs chunks (parties) 
+pour optimiser les performances de votre application.
+
+Utilité dans React : Webpack est souvent utilisé avec React pour automatiser les tâches comme :
+
+Transformer le JSX en JavaScript.
+Gérer les fichiers CSS et les images.
+Optimiser les performances via des outils comme minification et tree-shaking.
