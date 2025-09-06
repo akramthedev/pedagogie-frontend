@@ -90,7 +90,7 @@
     "sass": "^1.62.0",
     "slick-carousel": "^1.8.1",
     "styled-components": "^5.3.10",
-    "sweetalert2": "^11.7.3",
+    "sweetalert2": "^11.22.5",
     "web-vitals": "^3.3.1",
     "webpack": "^5.97.1",
     "webpack-dev-server": "^5.2.0",
