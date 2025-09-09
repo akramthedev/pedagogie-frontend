@@ -21,7 +21,7 @@ import Swal from "sweetalert2";
 let ENDPOINT = ENVIRONMENT.ENDPOINT_URL;
 // secondaire : 68add5217faf2d64301bc7ee
 // primaire   : 68add4e57faf2d64301bc7ec
-let TEACHER_ID = "68add4e57faf2d64301bc7ec";
+let TEACHER_ID = "68add5217faf2d64301bc7ee";
 
 const locales = {
   fr: fr,
@@ -54,7 +54,11 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
   const [commentPopUp, setCommentPopUp] = useState(false);
   const [studentName, setStudentName] = useState("");
   const [studentImgUrl, setStudentImgUrl] = useState("");
-  const [commentsHtml, setCommentsHtml] = useState(""); // State to store comments HTML
+  const [commentsList, setCommentsList] = useState([]); // List of fetched comments
+  const [activeCommentStudentId, setActiveCommentStudentId] = useState(null);
+  const [newCommentText, setNewCommentText] = useState("");
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [retardsList, setRetardsList] = useState([]);
 
   function handleSelectEvent(event) {
     setPopupSeance(event);
@@ -278,13 +282,17 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
   // Function to post a comment
   async function postComment(studentId, comment) {
     try {
+      const effectiveSeance = popupSeance || currentSeance;
+      if (!effectiveSeance) {
+        throw new Error("Aucune séance sélectionnée");
+      }
       const response = await fetch(`${ENDPOINT}/commentaires`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          seance: popupSeance.id,
+          seance: effectiveSeance.id,
           enseignant: TEACHER_ID,
           etudiant: studentId,
           commentaire: comment,
@@ -295,8 +303,17 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
         throw new Error("Failed to post comment");
       }
 
-      Swal.fire("Succès", "Commentaire enregistré avec succès", "success");
-      setPopupSeance(null); // Close the main popup after successful submission
+      Swal.fire({
+        icon: "success",
+        title: "Succès",
+        text: "Commentaire enregistré avec succès",
+        didOpen: () => {
+          const swal = document.querySelector(".swal2-container");
+          if (swal) swal.style.zIndex = 10000;
+        },
+      });
+      // In secondary mode this closes the main popup; in primary it is already null
+      setPopupSeance(null);
     } catch (error) {
       Swal.fire("Erreur", error.message, "error");
     }
@@ -305,8 +322,13 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
   // Function to post a retard
   async function postRetard(studentId) {
     try {
+      const effectiveSeance = popupSeance || currentSeance;
+      if (!effectiveSeance) {
+        throw new Error("Aucune séance sélectionnée");
+      }
       const heureEntree = new Date();
-      const heureDebutSeance = new Date(popupSeance.raw.debut);
+      const rawDebut = effectiveSeance.raw?.debut || effectiveSeance.start;
+      const heureDebutSeance = new Date(rawDebut);
 
       const margeRetard = Math.round(
         (heureEntree.getTime() - heureDebutSeance.getTime()) / 60000
@@ -318,7 +340,7 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          seance: popupSeance.id,
+          seance: effectiveSeance.id,
           enseignant: TEACHER_ID,
           etudiant: studentId,
           heureEntree: heureEntree.toISOString(),
@@ -330,8 +352,16 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
         throw new Error("Failed to post retard");
       }
 
-      Swal.fire("Succès", "Retard enregistré avec succès", "success");
-      setPopupSeance(null); // Close the main popup after successful submission
+      Swal.fire({
+        icon: "success",
+        title: "Succès",
+        text: "Retard enregistré avec succès",
+        didOpen: () => {
+          const swal = document.querySelector(".swal2-container");
+          if (swal) swal.style.zIndex = 10000;
+        },
+      });
+      setPopupSeance(null);
     } catch (error) {
       Swal.fire("Erreur", error.message, "error");
     }
@@ -379,64 +409,131 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
     }
   }
 
-  // Function to fetch comments for a student
-  async function fetchCommentsForStudent(studentId) {
+  // Fetch comments for a student
+  const fetchComments = async (studentId) => {
     try {
-      console.log(`Fetching comments for student ID: ${studentId}`);
       const response = await fetch(`${ENDPOINT}/commentaires/${studentId}`);
-
-      console.log(`Response status: ${response.status}`);
       if (!response.ok) {
-        throw new Error(`Failed to fetch comments: ${response.statusText}`);
+        throw new Error("Erreur lors de la récupération des commentaires");
       }
-
       const comments = await response.json();
-      console.log(`Fetched comments:`, comments);
-      return comments;
+      return Array.isArray(comments) ? comments : [];
     } catch (error) {
-      console.error("Erreur fetchCommentsForStudent:", error);
+      console.error(error);
       return [];
     }
-  }
+  };
 
-  // Function to open the comment popup
-  async function openCommentPopup(studentId) {
+  // Fetch tardiness entries for a student
+  const fetchRetards = async (studentId) => {
     try {
-      console.log(`Opening comment popup for student ID: ${studentId}`);
-      const response = await fetch(`${ENDPOINT}/commentaires/${studentId}`);
-
-      console.log(`Response status: ${response.status}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch comments: ${response.statusText}`);
-      }
-
-      const comments = await response.json();
-      console.log(`Fetched comments:`, comments);
-
-      if (!Array.isArray(comments) || comments.length === 0) {
-        throw new Error("No comments found or invalid data format.");
-      }
-
-      const commentsHtml = comments
-        .map(
-          (comment) =>
-            `<div style='margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;'>
-              <p style='margin: 0; font-weight: bold;'>Enseignant: ${comment.enseignant}</p>
-              <p style='margin: 0;'>Commentaire: ${comment.commentaire}</p>
-            </div>`
-        )
-        .join("");
-
-      setCommentsHtml(`<div style='text-align: left;'>${commentsHtml}</div>`);
-      setCommentPopUp(true);
-    } catch (error) {
-      console.error("Erreur lors de la récupération des commentaires:", error);
-      setCommentsHtml(
-        `<p>Erreur lors de la récupération des commentaires: ${error.message}</p>`
-      );
-      setCommentPopUp(true);
+      const response = await fetch(`${ENDPOINT}/retards/${studentId}`);
+      if (!response.ok)
+        throw new Error("Erreur lors de la récupération des retards");
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      console.error(e);
+      return [];
     }
-  }
+  };
+
+  // Open popup and load comments into state
+  const handleCommentPopupOpen = async (student) => {
+    setCommentPopUp(true);
+    setStudentName(student.name);
+    setStudentImgUrl(student.imgProfil);
+    setActiveCommentStudentId(student.id);
+    setCommentsLoading(true);
+    const [comments, retards] = await Promise.all([
+      fetchComments(student.id),
+      fetchRetards(student.id),
+    ]);
+    setCommentsList(comments);
+    setRetardsList(retards);
+    setCommentsLoading(false);
+  };
+
+  // Open retard popup and load student's tardiness history
+  const handleRetardPopupOpen = async (student) => {
+    setRetardPopUp(true);
+    setStudentName(student.name);
+    setStudentImgUrl(student.imgProfil);
+    setActiveCommentStudentId(student.id);
+    const retards = await fetchRetards(student.id);
+    setRetardsList(retards);
+  };
+
+  // Custom hook to fetch comments
+  const useFetchComments = (studentId) => {
+    const [comments, setComments] = useState([]);
+
+    useEffect(() => {
+      const fetchComments = async () => {
+        try {
+          const response = await fetch(`${ENDPOINT}/commentaires/${studentId}`);
+          if (!response.ok) {
+            throw new Error("Erreur lors de la récupération des commentaires");
+          }
+          const data = await response.json();
+          setComments(data);
+        } catch (error) {
+          console.error(error);
+          setComments([]);
+        }
+      };
+
+      if (studentId) {
+        fetchComments();
+      }
+    }, [studentId]);
+
+    return comments;
+  };
+
+  // Small renderer for comments list used inside the popup
+  const CommentList = ({ comments }) => (
+    <div className="commentList">
+      {commentsLoading ? (
+        <p className="commentEmpty">Chargement...</p>
+      ) : comments && comments.length > 0 ? (
+        comments.map((comment) => (
+          <div key={comment._id || comment.id} className="commentItem">
+            <div className="commentHeader">
+              <span className="commentTeacher">
+                Enseignant: {comment.enseignantName || comment.enseignant}
+              </span>
+              <span className="commentDate">
+                {comment.createdAt
+                  ? new Date(comment.createdAt).toLocaleString()
+                  : ""}
+              </span>
+            </div>
+            <div className="commentText">{comment.commentaire}</div>
+          </div>
+        ))
+      ) : (
+        <p className="commentEmpty">Aucun commentaire trouvé.</p>
+      )}
+    </div>
+  );
+
+  // Ensure comments are fetched whenever popup opens or active student changes
+  useEffect(() => {
+    const load = async () => {
+      if (commentPopUp && activeCommentStudentId) {
+        setCommentsLoading(true);
+        const [comments, retards] = await Promise.all([
+          fetchComments(activeCommentStudentId),
+          fetchRetards(activeCommentStudentId),
+        ]);
+        setCommentsList(comments);
+        setRetardsList(retards);
+        setCommentsLoading(false);
+      }
+    };
+    load();
+  }, [commentPopUp, activeCommentStudentId]);
 
   useEffect(() => {
     fetchClassesAndProfile();
@@ -604,11 +701,7 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                       <div className="student-actions">
                         <button
                           className="retardBtn"
-                          onClick={() => {
-                            setRetardPopUp(true);
-                            setStudentName(st.name);
-                            setStudentImgUrl(st.imgProfil);
-                          }}
+                          onClick={() => handleRetardPopupOpen(st)}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -630,7 +723,7 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                             <path d="M8.644 21.42a10 10 0 0 0 7.631-.38" />
                           </svg>
                         </button>
-                        {retardPopUp && (
+                        {retardPopUp && activeCommentStudentId === st.id && (
                           <div
                             className="retard-overlay"
                             onClick={(e) => {
@@ -666,6 +759,52 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                               <h4 className="retardTitle">
                                 Confirmer le retard de l'étudiant
                               </h4>
+                              {retardsList && retardsList.length > 0 && (
+                                <div
+                                  className="commentList"
+                                  style={{ marginBottom: 10 }}
+                                >
+                                  {retardsList.map((r) => (
+                                    <div key={r._id} className="commentItem">
+                                      <div className="commentHeader">
+                                        <span className="commentTeacher">
+                                          Retard: {r.margeRetard} min
+                                        </span>
+                                        <span className="commentDate">
+                                          {r.seanceStart
+                                            ? `${new Date(
+                                                r.seanceStart
+                                              ).toLocaleDateString()} ${new Date(
+                                                r.seanceStart
+                                              ).toLocaleTimeString([], {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                              })}`
+                                            : new Date(
+                                                r.createdAt
+                                              ).toLocaleString()}
+                                        </span>
+                                      </div>
+                                      <div className="commentText">
+                                        Séance:{" "}
+                                        {r.seanceStart && r.seanceEnd
+                                          ? `${new Date(
+                                              r.seanceStart
+                                            ).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })} - ${new Date(
+                                              r.seanceEnd
+                                            ).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}`
+                                          : "—"}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                               <div className="retardBtns">
                                 <button
                                   className="retardConfirm"
@@ -691,11 +830,7 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
 
                         <button
                           className="commentBtn"
-                          onClick={() => {
-                            setCommentPopUp(true);
-                            setStudentName(st.name);
-                            setStudentImgUrl(st.imgProfil);
-                          }}
+                          onClick={() => handleCommentPopupOpen(st)}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -715,7 +850,7 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                             <path d="M16 12h.01" />
                           </svg>
                         </button>
-                        {commentPopUp && (
+                        {commentPopUp && activeCommentStudentId === st.id && (
                           <div
                             className="comment-overlay"
                             onClick={(e) => {
@@ -756,6 +891,10 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                                   type="text"
                                   className="commentInput"
                                   placeholder="Votre commentaire..."
+                                  value={newCommentText}
+                                  onChange={(e) =>
+                                    setNewCommentText(e.target.value)
+                                  }
                                 />
                                 <div className="commentBtns">
                                   <button
@@ -769,14 +908,18 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                                   <button
                                     type="submit"
                                     className="commentSave"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                       e.preventDefault();
-                                      const comment =
-                                        document.querySelector(
-                                          ".commentInput"
-                                        ).value;
-                                      postComment(st.id, comment); // Pass the correct student ID
-                                      setCommentPopUp(false);
+                                      if (!newCommentText.trim()) return;
+                                      await postComment(
+                                        st.id,
+                                        newCommentText.trim()
+                                      );
+                                      setNewCommentText("");
+                                      const refreshed = await fetchComments(
+                                        st.id
+                                      );
+                                      setCommentsList(refreshed);
                                     }}
                                   >
                                     Enregistrer le commentaire
@@ -784,17 +927,53 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                                 </div>
                               </form>
 
-                              <div className="commentsSection">
-                                {commentsHtml ? (
-                                  <div
-                                    dangerouslySetInnerHTML={{
-                                      __html: commentsHtml,
-                                    }}
-                                  />
-                                ) : (
-                                  <p>Aucun commentaire trouvé.</p>
-                                )}
-                              </div>
+                              <CommentList comments={commentsList} />
+                              {retardsList && retardsList.length > 0 && (
+                                <div
+                                  className="commentList"
+                                  style={{ marginTop: 10 }}
+                                >
+                                  {retardsList.map((r) => (
+                                    <div key={r._id} className="commentItem">
+                                      <div className="commentHeader">
+                                        <span className="commentTeacher">
+                                          Retard: {r.margeRetard} min
+                                        </span>
+                                        <span className="commentDate">
+                                          {r.seanceStart
+                                            ? `${new Date(
+                                                r.seanceStart
+                                              ).toLocaleDateString()} ${new Date(
+                                                r.seanceStart
+                                              ).toLocaleTimeString([], {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                              })}`
+                                            : new Date(
+                                                r.createdAt
+                                              ).toLocaleString()}
+                                        </span>
+                                      </div>
+                                      <div className="commentText">
+                                        Séance:{" "}
+                                        {r.seanceStart && r.seanceEnd
+                                          ? `${new Date(
+                                              r.seanceStart
+                                            ).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })} - ${new Date(
+                                              r.seanceEnd
+                                            ).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}`
+                                          : "—"}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1155,11 +1334,7 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                               <div className="student-action">
                                 <button
                                   className="retardBtn"
-                                  onClick={() => {
-                                    setRetardPopUp(true);
-                                    setStudentName(st.name);
-                                    setStudentImgUrl(st.imgProfil);
-                                  }}
+                                  onClick={() => handleRetardPopupOpen(st)}
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -1181,74 +1356,134 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                                     <path d="M8.644 21.42a10 10 0 0 0 7.631-.38" />
                                   </svg>
                                 </button>
-                                {retardPopUp && (
-                                  <div
-                                    className="retard-overlay"
-                                    onClick={(e) => {
-                                      if (
-                                        e.target.classList.contains(
-                                          "retard-overlay"
-                                        )
-                                      ) {
-                                        setRetardPopUp(false);
-                                      }
-                                    }}
-                                  >
-                                    <div className="retardPopup">
-                                      <button
-                                        className="retardCloseBtn"
-                                        onClick={() => {
+                                {retardPopUp &&
+                                  activeCommentStudentId === st.id && (
+                                    <div
+                                      className="retard-overlay"
+                                      onClick={(e) => {
+                                        if (
+                                          e.target.classList.contains(
+                                            "retard-overlay"
+                                          )
+                                        ) {
                                           setRetardPopUp(false);
-                                        }}
-                                      >
-                                        ×
-                                      </button>
-                                      <div className="retardStudentInfo">
-                                        <span className="retardStudentImg">
-                                          <img
-                                            src={studentImgUrl || imgParDefaut}
-                                            alt="profil"
-                                            width={50}
-                                            height={50}
-                                          />
-                                        </span>
-                                        <span className="retardStudentName">
-                                          {studentName}
-                                        </span>
-                                      </div>
-                                      <h4 className="retardTitle">
-                                        Confirmer le retard de l'étudiant
-                                      </h4>
-                                      <div className="retardBtns">
+                                        }
+                                      }}
+                                    >
+                                      <div className="retardPopup">
                                         <button
-                                          className="retardConfirm"
-                                          onClick={() => {
-                                            postRetard(st.id); // Pass the correct student ID
-                                            setRetardPopUp(false);
-                                          }}
-                                        >
-                                          Confirmer
-                                        </button>
-                                        <button
-                                          className="retardCancel"
+                                          className="retardCloseBtn"
                                           onClick={() => {
                                             setRetardPopUp(false);
                                           }}
                                         >
-                                          Annuler
+                                          ×
                                         </button>
+                                        <div className="retardStudentInfo">
+                                          <span className="retardStudentImg">
+                                            <img
+                                              src={
+                                                studentImgUrl || imgParDefaut
+                                              }
+                                              alt="profil"
+                                              width={50}
+                                              height={50}
+                                            />
+                                          </span>
+                                          <span className="retardStudentName">
+                                            {studentName}
+                                          </span>
+                                        </div>
+                                        <h4 className="retardTitle">
+                                          Confirmer le retard de l'étudiant
+                                        </h4>
+                                        {retardsList &&
+                                          retardsList.length > 0 && (
+                                            <div
+                                              className="commentList"
+                                              style={{ marginBottom: 10 }}
+                                            >
+                                              {retardsList.map((r) => (
+                                                <div
+                                                  key={r._id}
+                                                  className="commentItem"
+                                                >
+                                                  <div className="commentHeader">
+                                                    <span className="commentTeacher">
+                                                      Retard: {r.margeRetard}{" "}
+                                                      min
+                                                    </span>
+                                                    <span className="commentDate">
+                                                      {r.seanceStart
+                                                        ? `${new Date(
+                                                            r.seanceStart
+                                                          ).toLocaleDateString()} ${new Date(
+                                                            r.seanceStart
+                                                          ).toLocaleTimeString(
+                                                            [],
+                                                            {
+                                                              hour: "2-digit",
+                                                              minute: "2-digit",
+                                                            }
+                                                          )}`
+                                                        : new Date(
+                                                            r.createdAt
+                                                          ).toLocaleString()}
+                                                    </span>
+                                                  </div>
+                                                  <div className="commentText">
+                                                    Séance:{" "}
+                                                    {r.seanceStart &&
+                                                    r.seanceEnd
+                                                      ? `${new Date(
+                                                          r.seanceStart
+                                                        ).toLocaleTimeString(
+                                                          [],
+                                                          {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                          }
+                                                        )} - ${new Date(
+                                                          r.seanceEnd
+                                                        ).toLocaleTimeString(
+                                                          [],
+                                                          {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                          }
+                                                        )}`
+                                                      : "—"}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        <div className="retardBtns">
+                                          <button
+                                            className="retardConfirm"
+                                            onClick={() => {
+                                              postRetard(st.id); // Pass the correct student ID
+                                              setRetardPopUp(false);
+                                            }}
+                                          >
+                                            Confirmer
+                                          </button>
+                                          <button
+                                            className="retardCancel"
+                                            onClick={() => {
+                                              setRetardPopUp(false);
+                                            }}
+                                          >
+                                            Annuler
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                )}
+                                  )}
 
                                 <button
                                   className="commentBtn"
-                                  onClick={() => {
-                                    setCommentPopUp(true);
-                                    setStudentName(st.name);
-                                    setStudentImgUrl(st.imgProfil);
-                                  }}
+                                  onClick={() => handleCommentPopupOpen(st)}
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -1268,92 +1503,153 @@ const SuiviPresences = ({ Cls_Id, Ens_Id, Mat_Id, Date_Presence }) => {
                                     <path d="M16 12h.01" />
                                   </svg>
                                 </button>
-                                {commentPopUp && (
-                                  <div
-                                    className="comment-overlay"
-                                    onClick={(e) => {
-                                      if (
-                                        e.target.classList.contains(
-                                          "comment-overlay"
-                                        )
-                                      ) {
-                                        setCommentPopUp(false);
-                                      }
-                                    }}
-                                  >
-                                    <div className="commentPopup">
-                                      <button
-                                        className="commentCloseBtn"
-                                        onClick={() => {
+                                {commentPopUp &&
+                                  activeCommentStudentId === st.id && (
+                                    <div
+                                      className="comment-overlay"
+                                      onClick={(e) => {
+                                        if (
+                                          e.target.classList.contains(
+                                            "comment-overlay"
+                                          )
+                                        ) {
                                           setCommentPopUp(false);
-                                        }}
-                                      >
-                                        ×
-                                      </button>
-                                      <div className="commentStudentInfo">
-                                        <span className="commentStudentImg">
-                                          <img
-                                            src={studentImgUrl || imgParDefaut}
-                                            alt="profil"
-                                            width={50}
-                                            height={50}
-                                          />
-                                        </span>
-                                        <span className="commentStudentName">
-                                          {studentName}
-                                        </span>
-                                      </div>
-                                      <h4 className="commentTitle">
-                                        Saisir un commentaire
-                                      </h4>
-                                      <form className="commentForm">
-                                        <input
-                                          type="text"
-                                          className="commentInput"
-                                          placeholder="Votre commentaire..."
-                                        />
-                                        <div className="commentBtns">
-                                          <button
-                                            className="commentCancel"
-                                            onClick={() => {
-                                              setCommentPopUp(false);
-                                            }}
-                                          >
-                                            Fermer
-                                          </button>
-                                          <button
-                                            type="submit"
-                                            className="commentSave"
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              const comment =
-                                                document.querySelector(
-                                                  ".commentInput"
-                                                ).value;
-                                              postComment(st.id, comment); // Pass the correct student ID
-                                              setCommentPopUp(false);
-                                            }}
-                                          >
-                                            Enregistrer le commentaire
-                                          </button>
+                                        }
+                                      }}
+                                    >
+                                      <div className="commentPopup">
+                                        <button
+                                          className="commentCloseBtn"
+                                          onClick={() => {
+                                            setCommentPopUp(false);
+                                          }}
+                                        >
+                                          ×
+                                        </button>
+                                        <div className="commentStudentInfo">
+                                          <span className="commentStudentImg">
+                                            <img
+                                              src={
+                                                studentImgUrl || imgParDefaut
+                                              }
+                                              alt="profil"
+                                              width={50}
+                                              height={50}
+                                            />
+                                          </span>
+                                          <span className="commentStudentName">
+                                            {studentName}
+                                          </span>
                                         </div>
-                                      </form>
-
-                                      {/* Render comments directly in the comment popup */}
-                                      <div className="commentsSection">
-                                        {commentsHtml ? (
-                                          <div
-                                            dangerouslySetInnerHTML={{
-                                              __html: commentsHtml,
-                                            }}
+                                        <h4 className="commentTitle">
+                                          Saisir un commentaire
+                                        </h4>
+                                        <form className="commentForm">
+                                          <input
+                                            type="text"
+                                            className="commentInput"
+                                            placeholder="Votre commentaire..."
+                                            value={newCommentText}
+                                            onChange={(e) =>
+                                              setNewCommentText(e.target.value)
+                                            }
                                           />
-                                        ) : (
-                                          <p>Aucun commentaire trouvé.</p>
-                                        )}
+                                          <div className="commentBtns">
+                                            <button
+                                              className="commentCancel"
+                                              onClick={() => {
+                                                setCommentPopUp(false);
+                                              }}
+                                            >
+                                              Fermer
+                                            </button>
+                                            <button
+                                              type="submit"
+                                              className="commentSave"
+                                              onClick={async (e) => {
+                                                e.preventDefault();
+                                                if (!newCommentText.trim())
+                                                  return;
+                                                await postComment(
+                                                  st.id,
+                                                  newCommentText.trim()
+                                                );
+                                                setNewCommentText("");
+                                                const refreshed =
+                                                  await fetchComments(st.id);
+                                                setCommentsList(refreshed);
+                                              }}
+                                            >
+                                              Enregistrer le commentaire
+                                            </button>
+                                          </div>
+                                        </form>
+
+                                        <CommentList comments={commentsList} />
+                                        {retardsList &&
+                                          retardsList.length > 0 && (
+                                            <div
+                                              className="commentList"
+                                              style={{ marginTop: 10 }}
+                                            >
+                                              {retardsList.map((r) => (
+                                                <div
+                                                  key={r._id}
+                                                  className="commentItem"
+                                                >
+                                                  <div className="commentHeader">
+                                                    <span className="commentTeacher">
+                                                      Retard: {r.margeRetard}{" "}
+                                                      min
+                                                    </span>
+                                                    <span className="commentDate">
+                                                      {r.seanceStart
+                                                        ? `${new Date(
+                                                            r.seanceStart
+                                                          ).toLocaleDateString()} ${new Date(
+                                                            r.seanceStart
+                                                          ).toLocaleTimeString(
+                                                            [],
+                                                            {
+                                                              hour: "2-digit",
+                                                              minute: "2-digit",
+                                                            }
+                                                          )}`
+                                                        : new Date(
+                                                            r.createdAt
+                                                          ).toLocaleString()}
+                                                    </span>
+                                                  </div>
+                                                  <div className="commentText">
+                                                    Séance:{" "}
+                                                    {r.seanceStart &&
+                                                    r.seanceEnd
+                                                      ? `${new Date(
+                                                          r.seanceStart
+                                                        ).toLocaleTimeString(
+                                                          [],
+                                                          {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                          }
+                                                        )} - ${new Date(
+                                                          r.seanceEnd
+                                                        ).toLocaleTimeString(
+                                                          [],
+                                                          {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                          }
+                                                        )}`
+                                                      : "—"}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
                                       </div>
                                     </div>
-                                  </div>
-                                )}
+                                  )}
 
                                 <button className="moreBtn">
                                   <svg
